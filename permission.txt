@@ -1,0 +1,32 @@
+module Permission{
+
+  function isPermission(user):boolean;
+  function grantPermission( user, permission):user;
+  function grantRole(user, Role):user;
+
+  class Role{
+    String name;
+    Array permissions;
+  }
+
+  Table Permissions{
+    id,
+    type
+  }
+  Table Roles{
+    id,
+    name
+  }
+  Table role_permissions{
+    role_id,
+    permission_id
+  }
+  Table Users{
+    id,
+    name
+  }
+  Table user_permissions{
+    user_id,
+    permission_id
+  }
+}
