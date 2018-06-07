@@ -29,4 +29,8 @@ module Permission{
     user_id,
     permission_id
   }
+  Table user_roles{
+    user_id,
+    role_id
+  }
 }
