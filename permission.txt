@@ -1,8 +1,20 @@
 module Permission{
 
-  function isPermission(user):boolean;
+  before  do {
+  findUser(user)
+  checkAbility(user)
+  findPermission(permission), only[:grantPermission]
+  findRole(role), only[:grantRole]
+  }
+
   function grantPermission( user, permission):user;
-  function grantRole(user, Role):user;
+  function grantRole(user, role):user;
+
+  private
+  function findUser(user):user;
+  function checkAbility(user):boolean;
+  function findRole(role):role;
+  function findPermission(permission):permission;
 
   class Role{
     String name;
@@ -33,4 +45,19 @@ module Permission{
     user_id,
     role_id
   }
+}
+
+Tests {
+  let(user{id: 1, name: 'Andrew', permission: nil})
+  let(permission{type: 'Read'})
+  let(role{name: 'Admin'})
+
+  1) Add a permission to  a user with: grantPermission(user{name: “Andrew”}, permission(type: “Read”)): true;
+
+  2) Add a user to a role with: grantRole(user{id: 1}, role{name: “Admin”}): true;
+
+  3) Add a permission to  a user with: grantPermission(user{name: “Oleg”}, permission(type: “Write”)): false;
+
+  4) Add a user to a role with: grantRole(user{id: 1}, role{name: “Customer”}): false;
+
 }
