@@ -1,68 +1,141 @@
 module Permission{
 
-  before  do {
-  findUser(user)
-  checkAbility(user)
-  findPermission(permission), only[:grantPermission]
-  findRole(role), only[:grantRole]
+  functions{
+    before_action{
+    current_user = function findUser(user)
+    }
+
+    function checkPermission(current_user, permission): boolean;
+
+    function addPermission(current_user, permission){
+      return message: 'No such #{permission.class.downcase} #{permission.name}!' unless function findPermission(permission)
+      if function checkPermission(current_user, permission)
+        return message: '#{current_user.name} already has permission to #{permission.class.downcase} #{permission.name}'
+      else
+        User#{permisson.class}.create(current_user_id, #{permission.class.downcase}_id)
+        return message: '#{current_user.name} now has permission to #{permission.class.downcase} #{permission.name}!'
+      end
+    }
+
+    private
+    function findUser(user): user;
+    function findPermission(permission): boolean;
   }
 
-  function grantPermission( user, permission):user;
-  function grantRole(user, role):user;
+  Classes {
 
-  private
-  function findUser(user):user;
-  function checkAbility(user):boolean, message;
-  function findRole(role):role;
-  function findPermission(permission):permission;
+    class User{
+      has_many :user_actions
+      has_many :actions, through :user_actions
+      has_many :user_resources
+      has_many :resources, through :user_resources
+      has_many :user_roles
+      has_many :roles, through :user_roles
 
-  class Role{
-    String name;
-    Array permissions;
+      String name;
+    }
+
+    class Action{
+      has_many :user_actions
+      has_many :users, through :user_actions
+
+      String name;
+    }
+
+    class Resource{
+      has_many :user_resources
+      has_many :users, through :user_resources
+
+      String name;
+      String path;
+      Boolean read;
+      Boolean write;
+    }
+
+    class Role{
+      has_many :user_roles
+      has_many :users, through :user_roles
+
+      String name;
+      Array permissions;
+    }
+
+    class UserAction{
+      belongs_to :user
+      belongs_to :action
+    }
+
+    class UserResource{
+    belongs_to :user
+    belongs_to :resource
+    }
+
+    class UserRole{
+    belongs_to :user
+    belongs_to :role
+    }
   }
 
-  Table Permissions{
-    id,
-    type
+  Tables {
+
+    Table Users{
+      id,
+      name
+    }
+
+    Table Actions{
+      id,
+      name
+    }
+
+    Table Resources{
+      id,
+      path,
+      read,
+      write
+    }
+    Table Roles{
+      id,
+      name
+    }
+
+    Table user_actions{
+      user_id,
+      action_id
+    }
+
+    Table user_resources{
+      user_id,
+      resource_id
+    }
+
+    Table user_roles{
+      user_id,
+      role_id
+    }
   }
-  Table Roles{
-    id,
-    name
-  }
-  Table role_permissions{
-    role_id,
-    permission_id
-  }
-  Table Users{
-    id,
-    name
-  }
-  Table user_permissions{
-    user_id,
-    permission_id
-  }
-  Table user_roles{
-    user_id,
-    role_id
-  }
+
 }
 
 Tests {
-  let(user{id: 1, name: 'Andrew', permission: nil, role: nil})
-  let(user{id: 2, name: 'Stefan', permission: 'Read', role{name: 'Admin'} })
-  let(permission{type: 'Read'})
-  let(role{name: 'Admin'})
+  let(user{id: 1, name: 'Andrew', action: nil, resource: nil, role: nil})
+  let(user{id: 2, name: 'Stefan', action: {id: 1, name: 'Sit'}, resource: {id: 1, path: 'C:/readme.txt', read: true, write: false}, role: {id:1, name: 'Admin'} })
+  let(action: {id: 1, name: 'Sit'})
+  let(resource: {id: 1, name: 'C:/readme.txt - read', path: 'C:/readme.txt', read: true, write: false})
+  let(role{name: 'Admin', permissions: [ action: { id: 1, name: 'Sit'}, resource: {id: 1, path: 'C:/readme.txt', read: true, write: false}, action: { id: 2, name: 'Run'}]})
 
-  1) Add a permission to  a user with: grantPermission(user{name: “Andrew”}, permission(type: “Read”)): true;
+  1) Add an action to  a user with: addPermission(user: {id: 1, name: “Andrew”}, action: {id: 1, name: 'Sit'}:message: 'Andrew now has permission to action Sit;
+  2) Add an action to  a user with: addPermission(user: {id: 1, name: “Andrew”}, action: {id: 3, name: 'Smile'}: message: 'No such action Smile!';
+  3) Add an action to  a user with: addPermission(user: {id: 2, name: 'Stefan'}, action: {id: 1, name: 'Sit'}: message: 'Stefan already has permission to action Sit'
 
-  2) Add a user to a role with: grantRole(user{id: 1}, role{name: “Admin”}): true;
+  4) Add role to user with: addPermission(user: {id: 1, name: 'Andrew'}, role: {name: “Admin”}): message: 'Andrew now has permission to role Admin;
+  5) Add role to user with: addPermission(user: {id: 2, name: 'Stefan'}, role: {name: “Admin”}): message: 'Stefan already has permission to role Admin;
+  6) Add role to user with: addPermission(user: {id: 2, name: 'Stefan'}, role: {name: “Customer”}):message: 'No such role Customer!';
 
-  3) Add a permission to  a user with: grantPermission(user{name: “Oleg”}, permission(type: “Write”)): false;
+  7) Add resource to a user with: addPermission(user: {id: 1, name: 'Andrew'}, resource: {id: 1,  name: 'C:/readme.txt - read', path: 'C:/readme.txt', read: true, write: false}): message: 'Andrew now has permission to resource C:/readme.txt - read;
+  8) Add resource to a user with: addPermission(user: {id: 2, name: 'Stefan'}, resource: {id: 1,  name: 'C:/readme.txt - read', path: 'C:/readme.txt', read: true, write: false}): message: 'Stefan already has permission to resource C:/readme.txt - read';
+  9) Add resource to a user with: addPermission(user: {id: 1, name: 'Andrew'}, resource: {id: 2,  name: 'D:/readme.txt - write', path: 'D:/readme.txt', read: false, write: true}):message: 'No such resource D:/readme.txt - write!';
 
-  4) Add a user to a role with: grantRole(user{id: 1}, role{name: “Customer”}): false;
 
-  5) Add a user to a role with: grantRole(user{id: 2}, role{name: “Admin”}): false, message;
-
-  6) Add a permission to  a user with: grantPermission(user{name: “Stefan”}, permission(type: “Read”)): false, message;
 
 }
